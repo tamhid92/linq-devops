@@ -1,0 +1,93 @@
+---
+- name: Deploy Python-based custom Prometheus exporter
+  hosts: exporter_targets
+  become: yes
+  vars:
+    exporter_port: 9101
+    script_path: /opt/custom_exporter
+    VAULT_ADDR: "{{ lookup('env', 'VAULT_ADDR') }}"
+    VAULT_TOKEN: "{{ lookup('env', 'VAULT_TOKEN') }}"
+  tasks:
+    - name: Install required packages
+      apt:
+        name: [python3, python3-pip]
+        update_cache: yes
+
+    - name: Install dependencies 
+      pip:
+        name:
+          - prometheus_client
+          - psutil
+          - slack-sdk
+          - hvac
+        break_system_packages: true
+        state: present
+        executable: pip3
+
+    - name: Create directory for exporter
+      file:
+        path: "{{ script_path }}"
+        state: directory
+    
+    - name: Upload Python exporter script
+      copy:
+        src: files/custom-exporter.py
+        dest: "{{ script_path }}/custom-exporter.py"
+        mode: '0755'
+    
+    - name: Upload hvac_lib.py
+      copy:
+        src: files/hvac_lib.py
+        dest: "{{ script_path }}/hvac_lib.py"
+        mode: '0755'
+
+    - name: Create systemd service
+      template:
+        src: templates/custom_exporter.service.j2
+        dest: /etc/systemd/system/custom_exporter.service
+
+    - name: Reload systemd and start exporter
+      systemd:
+        daemon_reload: yes
+        name: custom_exporter
+        enabled: yes
+        state: restarted
+      check_mode: false
+
+    - name: Open exporter port (ufw)
+      ufw:
+        rule: allow
+        port: "{{ exporter_port }}"
+        proto: tcp
+
+- name: Add Python exporter targets to Prometheus and reload config
+  hosts: prometheus
+  become: yes
+  vars:
+    prometheus_config: /etc/prometheus/prometheus.yml
+    prometheus_backup: /etc/prometheus/prometheus.yml.bak
+    exporter_group: exporter_targets
+    exporter_port: 9101
+    targets: "{{ groups['exporter_targets'] | map('extract', hostvars, ['ansible_host']) | list }}"
+  tasks:
+    - name: Backup existing Prometheus config
+      copy:
+        src: "{{ prometheus_config }}"
+        dest: "{{ prometheus_backup }}"
+        remote_src: true
+
+    - name: Add scrape config for custom exporters
+      blockinfile:
+        path: "{{ prometheus_config }}"
+        marker: "# {mark} CUSTOM_EXPORTER"
+        block: |2
+            - job_name: 'custom_exporter'
+              static_configs:
+              {% for ip in targets %}
+              - targets: ['{{ ip }}:{{ exporter_port }}']
+              {% endfor %}
+
+    - name: Reload Prometheus config
+      uri:
+        url: https://prometheus.tchowdhury.org/-/reload
+        method: POST

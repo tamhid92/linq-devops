@@ -1,0 +1,12 @@
+[Unit]
+Description=Custom Prometheus Exporter
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/custom_exporter/custom-exporter.py
+Restart=always
+Environment=VAULT_ADDR={{ VAULT_ADDR }}
+Environment=VAULT_TOKEN={{ VAULT_TOKEN }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+---
+global:
+  scrape_interval: 15s  # By default, scrape targets every 15 seconds.
+
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+
+# Example job for node_exporter
+# - job_name: 'node_exporter'
+#   static_configs:
+#     - targets: ['node_exporter:9100']
+
+# BEGIN CUSTOM_EXPORTER
+  - job_name: 'custom_exporter'
+    static_configs:
+        - targets: ['192.168.68.76:9101']
+          labels:
+            instance: 'develop'
+        - targets: ['192.168.68.85:9101']
+          labels:
+            instance: 'k8worker1'
+        - targets: ['192.168.68.86:9101']
+          labels:
+            instance: 'k8worker2'
+        - targets: ['192.168.68.81:9101']
+          labels:
+            instance: 'reverse-proxy'
+        - targets: ['192.168.68.82:9101']
+          labels:
+            instance: 'dns-server'
+        - targets: ['192.168.68.62:9101']
+          labels:
+            instance: 'k8master'
+# END CUSTOM_EXPORTER
+# BEGIN API EXPORTER
+  - job_name: 'api'
+    static_configs:
+      - targets: ['inventory.tchowdhury.org']
+      - targets: ['united.tchowdhury.org']
+    metrics_path: '/metrics'
+# END API EXPORTER
