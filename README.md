@@ -103,6 +103,10 @@ This architecture is designed for scalability:
 - Add automated validation and recovery for exporter services.
 
 ---
+![grafana-dashboard](/screenshots/grafana.PNG)
+Grafana Dashboard
+![alert](/screenshots/stress-test.PNG)
+Slack alert during stress test, time set to 2 minutes for testing.
 
 ## 📌 Notes
 

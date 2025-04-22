@@ -44,11 +44,9 @@ def exceeds_threshold(value, threshold, state):
         state['start_time'] = None
         state['alerted'] = False
     return False
-    # This function checks if the current time is within the specified time range.
     
 
 def send_slack_message(bot_token, channel, message):
-    # This function sends a message to a Slack channel using the Slack API.
     # It uses the Slack SDK to send the message and handles throttling to avoid sending too many messages in a short time.
     global last_slack_msg
     now = datetime.now()
@@ -72,7 +70,8 @@ def collect_metrics():
     # Connect to Vault to retrieve the Slack API bot token
     vault_client = HVACClient()
     slack_token = vault_client.read("secret/data/slack_api_token")["bot_token"]
-
+    # Get the hostname and IP address of the machine
+    # This is useful for identifying the machine in the Slack message
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
 
@@ -103,6 +102,10 @@ def collect_metrics():
         memory_usage.set(memory)
         disk_usage.set(disk)
 
+
+        # Check if the CPU or memory usage exceeds 80% for more than 5 minutes
+        # Commented out the missing_processes check for now, but it can be uncommented if needed as it is useful for monitoring production processes
+
         if cpu > 80 and exceeds_threshold(cpu, 80, state):
             send_slack_message(slack_token, '#monitoring', f"High CPU usage detected: {cpu}% on {hostname} - ({ip_address}) for over 5 minutes")
         if memory > 80 and exceeds_threshold(memory, 80, state):
@@ -114,7 +117,7 @@ def collect_metrics():
         # if missing_processes:
         #     send_slack_message(slack_token, '#monitoring', f"Missing processes detected: {', '.join(missing_processes)} on {hostname} - ({ip_address})")
 
-        time.sleep(15)  # Sleep for 30 seconds before checking again
+        time.sleep(15)
 
 if __name__ == "__main__":
     # Start the Prometheus server
