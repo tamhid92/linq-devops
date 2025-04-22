@@ -114,5 +114,5 @@ Slack alert during stress test, time set to 2 minutes for testing.
 ## 📌 Notes
 
 - The pipeline is tailored to my home lab setup and assumes certain configurations are pre-installed.
-    -  My Infrastructure architecture can be viewed [here](https://www.github.com/tamhid92/devops)
+    -  The infrastructure architecture is illustrated [here](https://www.github.com/tamhid92/devops)
 - The monitoring script is compatible with any Linux machine given dependencies are met and a valid Slack token is provided.
